@@ -17,16 +17,39 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER
 import os, urllib.request
 
 # ============================================================
-# ШРИФТЫ (скачиваем один раз)
+# ШРИФТЫ (ищем в системе или используем встроенные пути)
 # ============================================================
-FONT_URL  = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf"
-FONTB_URL = "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans-Bold.ttf"
-if not os.path.exists("DejaVuSans.ttf"):
-    urllib.request.urlretrieve(FONT_URL,  "DejaVuSans.ttf")
-if not os.path.exists("DejaVuSans-Bold.ttf"):
-    urllib.request.urlretrieve(FONTB_URL, "DejaVuSans-Bold.ttf")
-pdfmetrics.registerFont(TTFont("DejaVu",     "DejaVuSans.ttf"))
-pdfmetrics.registerFont(TTFont("DejaVuBold", "DejaVuSans-Bold.ttf"))
+FONT_PATHS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/DejaVuSans.ttf",
+]
+FONTB_PATHS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/DejaVuSans-Bold.ttf",
+]
+
+def find_font(paths):
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
+font_path  = find_font(FONT_PATHS)
+fontb_path = find_font(FONTB_PATHS)
+
+if font_path and fontb_path:
+    pdfmetrics.registerFont(TTFont("DejaVu",     font_path))
+    pdfmetrics.registerFont(TTFont("DejaVuBold", fontb_path))
+else:
+    # Устанавливаем шрифты через apt если не найдены
+    import subprocess
+    subprocess.run(["apt-get", "install", "-y", "-q", "fonts-dejavu-core"], capture_output=True)
+    font_path  = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    fontb_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    pdfmetrics.registerFont(TTFont("DejaVu",     font_path))
+    pdfmetrics.registerFont(TTFont("DejaVuBold", fontb_path))
 
 # ============================================================
 # ЦВЕТА
